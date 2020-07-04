@@ -34,5 +34,4 @@ wd <-
 
 wd <-
     wd %>%
-    mutate(Correct = ifelse(sign(total_home_score - total_away_score) ==
-                            sign(home_wp - .5), 1, 0))
+    mutate(home_win = ifelse(home_score >= away_score, 1, 0))
