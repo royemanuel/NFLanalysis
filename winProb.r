@@ -35,3 +35,55 @@ wd <-
 wd <-
     wd %>%
     mutate(home_win = ifelse(home_score >= away_score, 1, 0))
+
+wdap <-
+    allplay %>%
+    left_join(., seasonData, by = "game_id") %>%
+    mutate(home_win = ifelse(home_score >= away_score, 1, 0)) %>%
+    select(game_id, home_team.x, away_team.x, home_wp, home_win, season) %>%
+    filter(!is.na(home_wp)) %>%
+    mutate(home_wp = round(home_wp, digits = 2)) %>%
+    group_by(home_wp)
+
+wdapsum <-
+    wdap %>%
+    summarise(N = n(), HW = sum(home_win)) %>%
+    mutate(Perc = HW / N)
+
+allPlot <- ggplot(wdapsum, aes(home_wp, Perc)) +
+    geom_point() +
+    geom_abline(slope= 1, intercept = 0) 
+
+wdapSsn <-
+    allplay %>%
+    left_join(., seasonData, by = "game_id") %>%
+    mutate(home_win = ifelse(home_score >= away_score, 1, 0)) %>%
+    select(game_id, home_team.x, away_team.x, home_wp, home_win, season) %>%
+    filter(!is.na(home_wp)) %>%
+    mutate(home_wp = round(home_wp, digits = 2)) %>%
+    group_by(season, home_wp)
+
+wdapsumSsn <-
+    wdapSsn %>%
+    summarise(N = n(), HW = sum(home_win)) %>%
+    mutate(Perc = HW / N)
+
+seasonPlot <- ggplot(wdapsumSsn, aes(home_wp, Perc)) +
+    geom_point() +
+    geom_abline(slope= 1, intercept = 0) +
+    facet_wrap( ~ season, ncol = 3)
+
+wdapTm <-
+    wdapTm %>%
+    ungroup() %>%
+    group_by(home_team.x, home_wp)
+
+wdapsumTm <-
+    wdapTm %>%
+    summarise(N = n(), HW = sum(home_win)) %>%
+    mutate(Perc = HW / N)
+
+teamPlot <- ggplot(wdapsumTm, aes(home_wp, Perc)) +
+    geom_point() +
+    geom_abline(slope= 1, intercept = 0) +
+    facet_wrap( ~ home_team.x, ncol = 3)
