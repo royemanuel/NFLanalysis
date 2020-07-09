@@ -95,24 +95,32 @@ seahawks2015 <-
     summarise(N = n(), HW = sum(home_win)) %>%
     mutate(Perc = HW / N)
 
-build_team_season <- function(df, team, year){
-    df <-
-        df %>%
-        ungroup() %>%
-        filter(home_team.x == team | away_team.x == team) %>%
-        filter(season == year) %>%
-        mutate(sel_team_wp = round(ifelse(home_team.x == team,
-                                          home_wp,
-                                          1 - home_wp),
-                                   2),
-               sel_team_win = ifelse(home_team.x == team, home_win,
-                                     ifelse(home_win == 0, 1, 0))) %>%
-        group_by(sel_team_wp) %>%
-        summarise(N = n(), TW = sum(sel_team_win)) %>%
-        mutate(Perc = TW / N,
-               Team = team,
-               Season = year)
+build_team_season <- function(df, teamyearlist){
+    toi <- list()
+    for (i in 1:dim(teamyearlist)[1]){
+        team <- teamyearlist[[1]][[i]]
+        year <- teamyearlist[[2]][[i]]
+        wdf <-
+            df %>%
+            ungroup() %>%
+            filter(home_team.x == team | away_team.x == team) %>%
+            filter(season == year) %>%
+            mutate(sel_team_wp = round(ifelse(home_team.x == team,
+                                              home_wp,
+                                              1 - home_wp),
+                                       2),
+                   sel_team_win = ifelse(home_team.x == team, home_win,
+                                  ifelse(home_win == 0, 1, 0))) %>%
+            group_by(sel_team_wp) %>%
+            summarise(N = n(), TW = sum(sel_team_win)) %>%
+            mutate(Perc = TW / N,
+                   Team = team,
+                   Season = year)
+        toi[[i]] <- wdf
+    }
+    bind_rows(toi)
 }
+
 
 build_plot <- function(df){
     pl <- ggplot(df, aes(sel_team_wp, Perc)) +
@@ -123,29 +131,42 @@ build_plot <- function(df){
 
 
 
+teams_of_interest <-
+    tibble(team = c("DEN",
+                    "JAX",
+                    "CHI",
+                    "NE",
+                    "ATL",
+                    "NE",
+                    "KC",
+                    "KC"),
+           year = rep(seq(from = 2016, to = 2019, by = 1), 2))
+    
+
+bestOffandDef <- build_team_season(wdap, teams_of_interest)
 
 
+## seahawks2015 <- build_team_season(wdap, "SEA", 2015)
+## sh2015plot <- build_plot(seahawks2015)
+## pats2016 <- build_team_season(wdap, "NE", 2016)
+## pats2016plot <- build_plot(pats2016)
+## pats2017 <- build_team_season(wdap, "NE", 2017)
+## pats2017plot <- build_plot(pats2017)
+## chiefs2018 <- build_team_season(wdap, "KC", 2018)
+## kc2018plot <- build_plot(chiefs2018)
+## chiefs2019 <- build_team_season(wdap, "KC", 2019)
+## kc2019plot <- build_plot(chiefs2019)
+## pats2019 <- 
 
+## teams_of_interest <- bind_rows(seahawks2015,
+##                                pats2016,
+##                                pats2017,
+##                                chiefs2018,
+##                                chiefs2019)
 
-seahawks2015 <- build_team_season(wdap, "SEA", 2015)
-sh2015plot <- build_plot(seahawks2015)
-pats2016 <- build_team_season(wdap, "NE", 2016)
-pats2016plot <- build_plot(pats2016)
-pats2017 <- build_team_season(wdap, "NE", 2017)
-pats2017plot <- build_plot(pats2017)
-chiefs2018 <- build_team_season(wdap, "KC", 2018)
-kc2018plot <- build_plot(chiefs2018)
-chiefs2019 <- build_team_season(wdap, "KC", 2019)
-kc2019plot <- build_plot(chiefs2019)
-
-teams_of_interest <- bind_rows(seahawks2015,
-                               pats2016,
-                               pats2017,
-                               chiefs2018,
-                               chiefs2019)
-
-ggplot(teams_of_interest, aes(sel_team_wp, Perc)) +
+toi_plot <-
+    ggplot(bestOffandDef, aes(sel_team_wp, Perc)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0) +
     theme_bw() +
-    facet_wrap(~ Team + Season, ncol = 2)
+    facet_wrap(~ Season + Team, ncol = 2)
